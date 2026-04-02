@@ -1,0 +1,80 @@
+#Lou Townsend version 2 updated 11-6-2023
+#Binning program on R 
+
+#Loading the Excel Files
+library(readxl)
+xcel_file <- read_excel("C://Users/louto/OneDrive - University of Nebraska Medical Center/Ca_data_full_2024_03_28.xlsx")
+#above specifies the path to the Excel file you want to load
+
+library(ggplot2) #loads the plotting package
+x_y<-data.frame(xcel_file) #puts excel file into new data frame
+
+#Filtering
+filtered_data <- x_y[x_y[,1] <= 50, ] #filter frequencies under entered "20" "50" Hz
+filtered_data2 <- filtered_data[filtered_data[,2] <= 0.6, ] #filters out artifacts/non-physiological outliers (0 Hz,7E^09)
+
+#Binning and Plotting
+#below portion inspired by maccruiskeen,Oct. 15, 2015, at stackoverflow.com/users/4499425/maccruiskeen
+#filtered_data2$Frequency_binned <- cut(filtered_data2[,1], breaks = 2) #cuts frequencies into 1 Hz bins, deprecated
+
+bins <- 0:50 #number of 1Hz bins, make sure vector end matches frequency filter value, ex 50 if below 50 Hz
+filtered_data2$bins<- cut(filtered_data2[,1], breaks = bins)
+ggplot(filtered_data2, aes(Frequency, Amplitude))+stat_summary_bin(fun = 'mean',geom = 'line', colour = "black", breaks = bins)+
+  labs(x = "Frequency (Hz)", y = "Mean Amplitude (au^2/Hz)")+scale_x_continuous(trans = 'log10', limits = c(1,50), minor_breaks = 2:50)
+#above puts binned x data in bar plot against averaged y's over specified binning parameters (by 1 Hz, until 50 Hz, encoded in "bins")
+    # note that here you can change geom = ' ', to desired graphics: bar, point, line, etc.
+    # I prefer one to run it with line first, followed by point. then i overlay those exported PNGs
+
+# to Export, Plots->Export->Save as Image->Change width if desired and name file accordingly
+#below plots the std dev per bin
+
+#ggplot(filtered_data2, aes(Frequency, Amplitude))+stat_summary_bin(fun = 'sd',geom = 'point', colour = "black", breaks = bins)+
+  #labs(x = "Frequency (Hz)", y = "Std Dev") #note if any are higher than 1, these are outlier driven
+
+#ggplot(filtered_data2,aes(Frequency, Amplitude))+stat_summary_bin(fun = 'sd',geom = 'point', colour = "black", breaks = bins, show.legend = TRUE)+labs(x = "Frequency (Hz)", y = "Value")+
+ # stat_summary_bin(fun = 'mean', geom = 'point', colour = "red", breaks = bins, show.legend = TRUE)
+ggplot(filtered_data2,aes(Frequency, Amplitude))+stat_summary_bin(fun = 'sd',geom = 'point', colour = "black", breaks = bins, show.legend = TRUE)+labs(x = "Frequency (Hz)", y = "Amplitude")+
+  stat_summary_bin(fun = 'mean', geom = 'point', colour = "red", breaks = bins, show.legend = TRUE)+scale_x_continuous(trans = "log10", limits = c(1,50))
+
+# Below portion is entirely for exporting data from the created plot for further validation
+
+#loads plot information into data frame
+#plot<-ggplot(filtered_data2, aes(filtered_data2$Frequency, filtered_data2$Amplitude))+stat_summary_bin(fun = 'mean', geom = 'point', breaks = bins)+
+ # labs(x = "Frequency (Hz)", y = "Mean Amplitude (au)")+ scale_x_continuous(trans = 'log10', limits = c(1,100))
+plot2<-ggplot(filtered_data2, aes(Frequency, Amplitude))+stat_summary_bin(fun = 'sd',geom = 'point', colour = "black", breaks = bins)+
+  labs(x = "Frequency (Hz)", y = "Std Dev")
+plot3<-ggplot(filtered_data2, aes(Frequency, Amplitude))+stat_summary_bin(fun = 'mean',geom = 'point', colour = "blue", breaks = bins)+
+  labs(x = "Frequency (Hz)", y = "Mean Amplitude")
+
+
+#below portion is if you would like to export the data from the histogram to check that it is indeed 
+#doing the right operations on the data, you can also run a smaller test file with known averages across
+#bins to check your work
+
+
+#g <- ggplot_build(plot) 
+#summarise_layout(g)
+
+#log_averaged <- mat.or.vec(length(g[["data"]][[1]][["x"]]),2) 
+#l_averaged_data <-data.frame(log_averaged)
+#colnames(l_averaged_data)<- colnames(filtered_data)
+#l_averaged_data[,2]<- g[["data"]][[1]][["y"]]
+#g[["data"]][[1]][["x"]]-> l_averaged_data[,1]#pulls the data from the histogram buried in g
+
+g2 <- ggplot_build(plot2) 
+g3 <- ggplot_build(plot3)
+
+averaged2 <- mat.or.vec(length(g2[["data"]][[1]][["x"]]),2) #not really average(std dev)
+averaged3 <- mat.or.vec(length(g3[["data"]][[1]][["x"]]),2)
+averaged_data2 <-data.frame(averaged2)
+averaged_data3 <-data.frame(averaged3)
+
+colnames(averaged_data2)<-c("Frequency", "Std Dev")
+colnames(averaged_data3)<-c("Frequency","Mean Power")
+averaged_data2[,2]<- g2[["data"]][[1]][["y"]]
+averaged_data3[,2]<- g3[["data"]][[1]][["y"]]
+g2[["data"]][[1]][["x"]]-> averaged_data2[,1]#pulls the data from the graph buried in g2
+g3[["data"]][[1]][["x"]]-> averaged_data3[,1]#pulls the data from the graph buried in g3
+mean_w_stddev<-merge.data.frame(averaged_data2,averaged_data3, by = "Frequency")
+library(yulab.utils)
+show_in_excel(mean_w_stddev)#export to excel 

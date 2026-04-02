@@ -1,0 +1,52 @@
+%Lou Townsend%
+%09-10-25
+%Organize power spectral data for R binning program%
+
+%This code will take power spectra data from clampfit, in the format of
+% paired x and y data for "n" number of appended spectra
+
+%data = readtable("8_fields_ctl_1V_12-15-25.xlsx"); %enter excel sheet name with clampfit PS data in between quotes to load
+%if you are having trouble loading the excel, make sure that you have saved
+%it into the path you are working in above C: > Users > "your name" > etc.
+
+unorganized_array = table2array(data); %converts tabular data to array "double" format (easier for operations)
+
+num_col = width(unorganized_array); %retrieves the total number of columns in the data (to set loop iteration parameter)
+i = []; %pre-allocates iteration, not necessary but speeds processing
+for i = 1:num_col
+    if rem(i,2) == 0
+     only_ys(:,(i/2))= unorganized_array(:,(i));  %iterates through to pull out even columns only, since these are the columns containing power values
+    else
+     only_xs(:,((i+1)/2)) = unorganized_array(:,i);
+    end
+end
+%% 
+
+format_build = zeros((length(only_ys))*(width(only_ys)),2); %creates empty array to begin formatting
+format_build(1:length(only_xs),1) = only_xs(:,1); %sets first two columns
+format_build(1:length(only_ys),2) = only_ys(:,1); %within format build, since iteration 
+
+%format data for R script -> we need only one paired column of x,ys in a
+%longwise fashion
+%the iteration here is based on two variables, one changing size each time
+%depending on the other based on an observed pattern previously determined from manual organization
+%of data
+
+for col = 1: width(only_ys)
+    mm = col+1;
+    if mm <= width(only_ys)
+        format_build((((col)*length(only_ys)+1):((mm)*length(only_ys))),2)= only_ys(:,mm);
+        format_build((((col)*length(only_ys)+1):((mm)*length(only_ys))),1)= only_xs(:,mm);
+    else
+       
+    end
+end
+
+%All processed data is in the format_build file in the workspace on the
+%righthand side of this page, click that to copy values for future binning
+%routine (note you may need to merge multiple datasets processed here to
+%get averages across multiple scans) 
+
+%reconvert to tabular (optional)
+table_data = array2table(format_build,"VariableNames",["Frequency" "Amplitude"]);
+%writetable(table_data, "900nm_HEAT_14cells_9-22.xlsx")
