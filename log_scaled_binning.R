@@ -11,7 +11,7 @@ x_y<-data.frame(xcel_file) #puts excel file into new data frame
 
 #Filtering
 filtered_data <- x_y[x_y[,1] <= 50, ] #filter frequencies under entered "20" "50" Hz
-filtered_data2 <- filtered_data[filtered_data[,2] <= 0.6, ] #filters out artifacts/non-physiological outliers (0 Hz,7E^09)
+filtered_data2 <- filtered_data[filtered_data[,2] <= 20, ] #filters out artifacts/non-physiological outliers (0 Hz,7E^09)
 
 #Binning and Plotting
 #below portion inspired by maccruiskeen,Oct. 15, 2015, at stackoverflow.com/users/4499425/maccruiskeen
