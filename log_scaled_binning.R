@@ -18,7 +18,7 @@ filtered_data2 <- filtered_data[filtered_data[,2] <= 20, ] #filters out artifact
 #filtered_data2$Frequency_binned <- cut(filtered_data2[,1], breaks = 2) #cuts frequencies into 1 Hz bins, deprecated
 
 bins <- 0:50 #number of 1Hz bins, make sure vector end matches frequency filter value, ex 50 if below 50 Hz
-filtered_data2$bins<- cut(filtered_data2[,1], breaks = bins)
+filtered_data2$bins<- cut(filtered_data2[,1], breaks = bins)#, right = FALSE) #uncomment to change inclusion parameters for bin edges
 ggplot(filtered_data2, aes(Frequency, Amplitude))+stat_summary_bin(fun = 'mean',geom = 'line', colour = "black", breaks = bins)+
   labs(x = "Frequency (Hz)", y = "Mean Amplitude (au^2/Hz)")+scale_x_continuous(trans = 'log10', limits = c(1,50), minor_breaks = 2:50)
 #above puts binned x data in bar plot against averaged y's over specified binning parameters (by 1 Hz, until 50 Hz, encoded in "bins")
